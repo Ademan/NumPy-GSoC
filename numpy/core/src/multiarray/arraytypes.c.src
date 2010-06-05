@@ -952,9 +952,13 @@ PyTimeDelta_AsNormalized(PyObject *obj, NPY_DATETIMEUNIT base)
         return -1;
     }
 
-    td.day = ((PyDateTime_Delta *)obj)->days;
+    /* XXX: Dan's breaking more stuff */
+    /*td.day = ((PyDateTime_Delta *)obj)->days;
     td.sec = ((PyDateTime_Delta *)obj)->seconds;
-    td.us  = ((PyDateTime_Delta *)obj)->microseconds;
+    td.us  = ((PyDateTime_Delta *)obj)->microseconds;*/
+    td.day = PyDateTime_GET_DAY(obj);
+    td.sec = PyDateTime_DATE_GET_SECOND(obj);
+    td.us  = PyDateTime_DATE_GET_MICROSECOND(obj);
     td.ps  = 0;
     td.as  = 0;
 

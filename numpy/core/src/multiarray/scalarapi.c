@@ -638,12 +638,24 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
         while(itemsize && *dptr-- == 0) {
             itemsize--;
         }
-        if (type_num == PyArray_UNICODE && itemsize) {
+
+        if (type_num == PyArray_UNICODE && itemsize) { /* XXX: what should happen if itemsize is 0? surely that shouldn't happen anyways... */
             /*
              * make sure itemsize is a multiple of 4
              * so round up to nearest multiple
              */
             itemsize = (((itemsize - 1) >> 2) + 1) << 2;
+            int byteorder = 0;
+            if (descr->byteorder == '>')
+                byteorder = 1;
+            else if (descr->byteorder = '<')
+                byteorder = -1;
+            /* FIXME: need UTF16 version too? I think so */
+            return PyUnicode_DecodeUTF32(data, itemsize >> 2, NULL, &byteorder); /*XXX: make sure length is correct */
+        }
+        else if (type_num == PyArray_STRING)
+        {
+            return PyString_FromStringAndSize(data, itemsize);
         }
     }
     if (type->tp_itemsize != 0) {
@@ -672,6 +684,9 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
         memcpy(&(((PyDatetimeScalarObject *)obj)->obmeta), dt_data,
                sizeof(PyArray_DatetimeMetaData));
     }
+<<<<<<< .mine
+    if (PyTypeNum_ISFLEXIBLE(type_num)) { /* We've already handled string and unicode, must be VoidScalar */
+=======
     if (PyTypeNum_ISFLEXIBLE(type_num)) {
         if (type_num == PyArray_STRING) {
             destptr = PyString_AS_STRING(obj);
@@ -743,6 +758,7 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
             return obj;
         }
         else {
+>>>>>>> .r8455
             PyVoidScalarObject *vobj = (PyVoidScalarObject *)obj;
             vobj->base = NULL;
             vobj->descr = descr;
@@ -767,7 +783,7 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
                 return PyErr_NoMemory();
             }
             vobj->obval = destptr;
-        }
+        
     }
     else {
         destptr = scalar_value(obj, descr);

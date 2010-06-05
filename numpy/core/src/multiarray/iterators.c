@@ -199,11 +199,19 @@ slice_GetIndices(PySliceObject *r, intp length,
 {
     intp defstop;
 
-    if (r->step == Py_None) {
+    int rstart, rstop, rstep, rslicelength;
+
+    PySlice_GetIndicesEx(r, length,
+                         &rstart, &rstop, &rstep, &rslicelength);
+    /* FIXME: ugly duplicated functionality, use GetIndices() instead?
+     *        still ugly though
+     */
+
+    if (rstep == Py_None) {
         *step = 1;
     }
     else {
-        if (!slice_coerce_index(r->step, step)) {
+        if (!slice_coerce_index(rstep, step)) {
             return -1;
         }
         if (*step == 0) {
@@ -214,11 +222,11 @@ slice_GetIndices(PySliceObject *r, intp length,
     }
     /* defstart = *step < 0 ? length - 1 : 0; */
     defstop = *step < 0 ? -1 : length;
-    if (r->start == Py_None) {
+    if (rstart == Py_None) {
         *start = *step < 0 ? length-1 : 0;
     }
     else {
-        if (!slice_coerce_index(r->start, start)) {
+        if (!slice_coerce_index(rstart, start)) {
             return -1;
         }
         if (*start < 0) {
@@ -232,11 +240,11 @@ slice_GetIndices(PySliceObject *r, intp length,
         }
     }
 
-    if (r->stop == Py_None) {
+    if (rstop == Py_None) {
         *stop = defstop;
     }
     else {
-        if (!slice_coerce_index(r->stop, stop)) {
+        if (!slice_coerce_index(rstop, stop)) {
             return -1;
         }
         if (*stop < 0) {
