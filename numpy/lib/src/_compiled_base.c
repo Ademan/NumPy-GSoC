@@ -559,6 +559,7 @@ static PyTypeObject *PyMethodDescr_TypePtr = NULL;
 static PyObject *
 arr_add_docstring(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
+#if 0 /* everything this function does is evil! */
     PyObject *obj;
     PyObject *str;
     char *docstr;
@@ -636,6 +637,7 @@ arr_add_docstring(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
     Py_INCREF(str);
     Py_INCREF(Py_None);
+#endif /* evil function */
     return Py_None;
 }
 
