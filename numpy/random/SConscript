@@ -45,6 +45,7 @@ if needs_mingw_ftime_workaround():
 
 sources = [os.path.join('mtrand', x) for x in 
            ['mtrand.c', 'randomkit.c', 'initarray.c', 'distributions.c']]
+sources = [] # XXX: avoid mtrand.c for now
 
 # XXX: Pyrex dependency
-env.NumpyPythonExtension('mtrand', source = sources)
+#env.NumpyPythonExtension('mtrand', source = sources)
