@@ -596,6 +596,7 @@ arr_add_docstring(PyObject *NPY_UNUSED(dummy), PyObject *args)
         }                                                               \
     } while (0)
 
+#if 0 /* Not dealing with these descriptors for now, it's just docs anyways  ;-)*/
     if (_TESTDOC1(CFunction)) {
         _ADDDOC(CFunction, new->m_ml->ml_doc, new->m_ml->ml_name);
     }
@@ -629,6 +630,7 @@ arr_add_docstring(PyObject *NPY_UNUSED(dummy), PyObject *args)
         Py_INCREF(Py_None);
         return Py_None;
     }
+#endif /* end doc stuff that breaks building */
 
 #undef _TESTDOC1
 #undef _TESTDOC2

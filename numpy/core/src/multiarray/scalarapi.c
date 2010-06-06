@@ -627,15 +627,16 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
         return descr->f->getitem(data, base);
     }
     itemsize = descr->elsize;
-    copyswap = descr->f->copyswap;
-    type = descr->typeobj;
-    swap = !PyArray_ISNBO(descr->byteorder);
     if PyTypeNum_ISSTRING(type_num) {
         /* Eliminate NULL bytes */
-        char *dptr = data;
+        /*char *dptr = data;
 
         dptr += itemsize - 1;
         while(itemsize && *dptr-- == 0) {
+            itemsize--;
+        }*/
+        char * i;
+        for (i = data + itemsize - 1; itemsize && *i == 0; i--) {
             itemsize--;
         }
 
@@ -650,7 +651,7 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
                 byteorder = 1;
             else if (descr->byteorder = '<')
                 byteorder = -1;
-            /* FIXME: need UTF16 version too? I think so */
+            /* XXX: need UTF16 version too? */
             return PyUnicode_DecodeUTF32(data, itemsize >> 2, NULL, &byteorder); /*XXX: make sure length is correct */
         }
         else if (type_num == PyArray_STRING)
@@ -658,6 +659,10 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
             return PyString_FromStringAndSize(data, itemsize);
         }
     }
+
+    copyswap = descr->f->copyswap;
+    type = descr->typeobj;
+    swap = !PyArray_ISNBO(descr->byteorder);
     if (type->tp_itemsize != 0) {
         /* String type */
         obj = type->tp_alloc(type, itemsize);
@@ -684,81 +689,7 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
         memcpy(&(((PyDatetimeScalarObject *)obj)->obmeta), dt_data,
                sizeof(PyArray_DatetimeMetaData));
     }
-<<<<<<< .mine
     if (PyTypeNum_ISFLEXIBLE(type_num)) { /* We've already handled string and unicode, must be VoidScalar */
-=======
-    if (PyTypeNum_ISFLEXIBLE(type_num)) {
-        if (type_num == PyArray_STRING) {
-            destptr = PyString_AS_STRING(obj);
-            ((PyStringObject *)obj)->ob_shash = -1;
-#if !defined(NPY_PY3K)
-            ((PyStringObject *)obj)->ob_sstate = SSTATE_NOT_INTERNED;
-#endif
-            memcpy(destptr, data, itemsize);
-            return obj;
-        }
-        else if (type_num == PyArray_UNICODE) {
-            PyUnicodeObject *uni = (PyUnicodeObject*)obj;
-            size_t length = itemsize >> 2;
-#ifndef Py_UNICODE_WIDE
-            char *buffer;
-            int alloc = 0;
-            length *= 2;
-#endif
-            /* Need an extra slot and need to use Python memory manager */
-            uni->str = NULL;
-            destptr = PyMem_NEW(Py_UNICODE,length+1);
-            if (destptr == NULL) {
-                Py_DECREF(obj);
-                return PyErr_NoMemory();
-            }
-            uni->str = (Py_UNICODE *)destptr;
-            uni->str[0] = 0;
-            uni->str[length] = 0;
-            uni->length = length;
-            uni->hash = -1;
-            uni->defenc = NULL;
-#ifdef Py_UNICODE_WIDE
-            memcpy(destptr, data, itemsize);
-            if (swap) {
-                byte_swap_vector(destptr, length, 4);
-            }
-#else
-            /* need aligned data buffer */
-            if ((swap) || ((((intp)data) % descr->alignment) != 0)) {
-                buffer = _pya_malloc(itemsize);
-                if (buffer == NULL) {
-                    return PyErr_NoMemory();
-                }
-                alloc = 1;
-                memcpy(buffer, data, itemsize);
-                if (swap) {
-                    byte_swap_vector(buffer, itemsize >> 2, 4);
-                }
-            }
-            else {
-                buffer = data;
-            }
-
-            /*
-             * Allocated enough for 2-characters per itemsize.
-             * Now convert from the data-buffer
-             */
-            length = PyUCS2Buffer_FromUCS4(uni->str,
-                    (PyArray_UCS4 *)buffer, itemsize >> 2);
-            if (alloc) {
-                _pya_free(buffer);
-            }
-            /* Resize the unicode result */
-            if (MyPyUnicode_Resize(uni, length) < 0) {
-                Py_DECREF(obj);
-                return NULL;
-            }
-#endif
-            return obj;
-        }
-        else {
->>>>>>> .r8455
             PyVoidScalarObject *vobj = (PyVoidScalarObject *)obj;
             vobj->base = NULL;
             vobj->descr = descr;
