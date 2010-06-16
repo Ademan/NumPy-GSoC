@@ -36,9 +36,8 @@
 #include "buffer.c"
 
 
-#ifndef Py_UNICODE_WIDE
+/* XXX: For now we always need ucsnarrow */
 #include "ucsnarrow.c"
-#endif
 
 #include "arrayobject.c"
 

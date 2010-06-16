@@ -16,6 +16,7 @@
 #include "ctors.h"
 #include "descriptor.h"
 #include "scalartypes.h"
+#include "ucsnarrow.h"
 
 #include "common.h"
 
@@ -604,6 +605,58 @@ PyArray_TypeObjectFromType(int type)
     return obj;
 }
 
+NPY_NO_EXPORT PyUnicodeObject *
+PyArray_Unicode(void * data, PyArray_Descr *descr, size_t itemsize)
+{
+    PyUnicodeObject * obj;
+    void * destptr;
+    size_t length;
+    int swap;
+    char *buffer;
+    int alloc = 0;
+    size_t elements = itemsize / 4;
+
+    swap = !PyArray_ISNBO(descr->byteorder);
+    int byteorder = 0;
+    if (descr->byteorder == '>')
+        byteorder = 1;
+    else if (descr->byteorder = '<')
+        byteorder = -1;
+
+    memcpy(buffer, data, itemsize);
+    char * ucs2buf;
+
+    /* need aligned data buffer */
+    if ((swap) || ((((intp)data) % descr->alignment) != 0)) {
+        buffer = _pya_malloc(itemsize);
+        if (buffer == NULL) {
+            return PyErr_NoMemory();
+        }
+        alloc = 1;
+        memcpy(buffer, data, itemsize);
+        if (swap) {
+            byte_swap_vector(buffer, elements, 4);
+        }
+    }
+    else {
+        buffer = data;
+    }
+
+    /*
+     * Allocated enough for 2-characters per itemsize.
+     * Now convert from the data-buffer
+     */
+    ucs2buf = _pya_malloc(itemsize);
+    length = PyUCS2Buffer_FromUCS4(ucs2buf,
+            (PyArray_UCS4 *)buffer, elements);
+    if (alloc) {
+        _pya_free(buffer);
+    }
+    obj = PyUnicode_DecodeUTF16(ucs2buf, length, NULL, NULL);
+    _pya_free(ucs2buf);
+    return obj;
+}
+
 /* Does nothing with descr (cannot be NULL) */
 /*NUMPY_API
   Get scalar-equivalent to a region of memory described by a descriptor.
@@ -646,13 +699,8 @@ PyArray_Scalar(void *data, PyArray_Descr *descr, PyObject *base)
              * so round up to nearest multiple
              */
             itemsize = (((itemsize - 1) >> 2) + 1) << 2;
-            int byteorder = 0;
-            if (descr->byteorder == '>')
-                byteorder = 1;
-            else if (descr->byteorder = '<')
-                byteorder = -1;
             /* XXX: need UTF16 version too? */
-            return PyUnicode_DecodeUTF32(data, itemsize >> 2, NULL, &byteorder); /*XXX: make sure length is correct */
+            return PyArray_Unicode(data, descr, itemsize);
         }
         else if (type_num == PyArray_STRING)
         {

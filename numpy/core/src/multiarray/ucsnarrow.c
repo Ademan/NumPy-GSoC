@@ -84,43 +84,10 @@ PyUCS2Buffer_AsUCS4(Py_UNICODE *ucs2, PyArray_UCS4 *ucs4, int ucs2len, int ucs4l
     return numchars;
 }
 
-
 NPY_NO_EXPORT PyObject *
 MyPyUnicode_New(int length)
 {
     PyUnicodeObject *unicode;
-    unicode = PyObject_New(PyUnicodeObject, &PyUnicode_Type);
-    if (unicode == NULL) return NULL;
-    unicode->str = PyMem_NEW(Py_UNICODE, length+1);
-    if (!unicode->str) {
-        _Py_ForgetReference((PyObject *)unicode);
-        PyObject_Del(unicode);
-        return PyErr_NoMemory();
-    }
-    unicode->str[0] = 0;
-    unicode->str[length] = 0;
-    unicode->length = length;
-    unicode->hash = -1;
-    unicode->defenc = NULL;
-#if defined(NPY_PY3K)
-    unicode->state = 0; /* Not interned */
-#endif
+    unicode = PyUnicode_FromUnicode(NULL, length);
     return (PyObject *)unicode;
-}
-
-NPY_NO_EXPORT int
-MyPyUnicode_Resize(PyUnicodeObject *uni, int length)
-{
-    void *oldstr;
-
-    oldstr = uni->str;
-    PyMem_RESIZE(uni->str, Py_UNICODE, length+1);
-    if (!uni->str) {
-        uni->str = oldstr;
-        PyErr_NoMemory();
-        return -1;
-    }
-    uni->str[length] = 0;
-    uni->length = length;
-    return 0;
 }
